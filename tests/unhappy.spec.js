@@ -135,11 +135,12 @@ test('invalid login shows an error', async ({ page }) => {
   try {
     const alert = page.locator('.swal2-popup');
     await expect(alert).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Thất bại', { exact: false }), { timeout: 10000 }).toBeVisible();
+
   } catch (e) {
     await page.screenshot({ path: 'output/error-popup.png' });
     throw e;
   }
-  await expect(page.getByText('Thất bại', { exact: false }), { timeout: 10000 }).toBeVisible();
   await expect(page.locator('#auth-screen')).toBeVisible();
   await dismissAlert(page);
 });
