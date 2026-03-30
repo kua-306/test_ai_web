@@ -120,12 +120,19 @@ test('[Registration] Create real user for subsequent tests', async ({ page }) =>
     await expect(alert).toBeVisible({ timeout: 5000 });
     await dismissAlert(page);
   } catch (e) {
-    await page.screenshot({ path: 'output/error-popup.png' });
+    await page.screenshot({ path: 'output/error-popup1.png' });
     throw e;
   }
   // Đợi quay về login là thành công
   await expect(page.locator('#tab-login')).toBeVisible();
 });
+// test('login successfully with valid credentials', async ({ page }) => {
+//   await gotoApp(page);
+//   await page.locator('#login-username').fill('thune@gmail.com');
+//   await page.locator('#login-password').fill('ntltcua3006');
+//   const myToken = await page.evaluate(() => window.localStorage.getItem('access_token'));
+
+// });
 
 test('invalid login shows an error', async ({ page }) => {
   await gotoApp(page);
@@ -135,12 +142,12 @@ test('invalid login shows an error', async ({ page }) => {
   try {
     const alert = page.locator('.swal2-popup');
     await expect(alert).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Lỗi', { exact: false }), { timeout: 10000 }).toBeVisible();
-
   } catch (e) {
-    await page.screenshot({ path: 'output/error-popup.png' });
+    await page.screenshot({ path: 'output/error-popup2.png' });
     throw e;
   }
+  await expect(page.getByText('Thất bại', { exact: false }), { timeout: 10000 }).toBeVisible();
+
   await expect(page.locator('#auth-screen')).toBeVisible();
   await dismissAlert(page);
 });

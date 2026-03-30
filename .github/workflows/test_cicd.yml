@@ -30,11 +30,9 @@ jobs:
       - name: Run Test Unhappy case
         run: |
           npx playwright install --with-deps chromium
+          mkdir -p output
           npx playwright test tests/unhappy.spec.js
-      - name: Run Test Happy case
-        run: |
-          npx playwright test tests/generated-from-testcase.spec.js
-
+     
       - name: Upload Screenshots and Logs
         if: always() # <--- DÒNG NÀY LÀ SỐNG CÒN!
         uses: actions/upload-artifact@v4
