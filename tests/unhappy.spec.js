@@ -1,3 +1,4 @@
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('playwright/test');
@@ -136,6 +137,9 @@ test('[Registration] Create real user for subsequent tests', async ({ page }) =>
 
 test('invalid login shows an error', async ({ page }) => {
   await gotoApp(page);
+  page.on('requestfailed', request => {
+    console.log(`❌ REQUEST FAIL: ${request.url()} - Lỗi: ${request.failure().errorText}`);
+  });
   await page.locator('#login-username').fill('thune@gmail.com');
   await page.locator('#login-password').fill('wrong-password');
   await page.locator('#form-login button[type="submit"]').click();
