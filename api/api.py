@@ -33,6 +33,18 @@ MODEL_DIR = 'modelv2'
 #Dat ten class
 CLASS_NAMES = ['Mèo (Cat)', 'Gà (Chicken)', 'Bò (Cow)', 'Chó (Dog)', 'Ngựa (Horse)']
 IMG_SIZE = 224
+serving_fn = None
+if os.path.exists(MODEL_DIR):
+    try:
+        loaded_model = tf.saved_model.load(MODEL_DIR)
+        serving_fn = loaded_model.signatures['serving_default']
+        print("TẢI MODEL THÀNH CÔNG!")
+    except Exception as e:
+        print("\nLỖI TẢI MODEL:")
+        print(str(e))
+else:
+    print(f"\nLỖI: Không tìm thấy thư mục '{MODEL_DIR}'")
+
 
 limiter = Limiter(key_func=get_remote_address)
 allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
@@ -75,17 +87,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-serving_fn = None
-if os.path.exists(MODEL_DIR):
-    try:
-        loaded_model = tf.saved_model.load(MODEL_DIR)
-        serving_fn = loaded_model.signatures['serving_default']
-        print("TẢI MODEL THÀNH CÔNG!")
-    except Exception as e:
-        print("\nLỖI TẢI MODEL:")
-        print(str(e))
-else:
-    print(f"\nLỖI: Không tìm thấy thư mục '{MODEL_DIR}'")
 
 def preprocess_image(image: Image.Image, target_size: tuple):
     if image.mode != "RGB":
