@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('playwright/test');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BASE_URL = `file://${path.join(ROOT_DIR, 'app.html')}`;
@@ -115,9 +115,16 @@ test('[Registration] Create real user for subsequent tests', async ({ page }) =>
   await page.locator('#reg-username').fill('thune@gmail.com');
   await page.locator('#reg-password').fill('ntltcua3006');
   await page.locator('#form-register button[type="submit"]').click();
-
+  try {
+    const alert = page.locator('.swal2-popup');
+    await expect(alert).toBeVisible({ timeout: 5000 });
+    await dismissAlert(page);
+  } catch (e) {
+    await page.screenshot({ path: 'output/error-popup.png' });
+    throw e;
+  }
   // Đợi quay về login là thành công
-  // await expect(page.locator('#form-login')).toBeVisible();
+  await expect(page.locator('#tab-login')).toBeVisible();
 });
 
 test('invalid login shows an error', async ({ page }) => {
@@ -132,7 +139,7 @@ test('invalid login shows an error', async ({ page }) => {
     await page.screenshot({ path: 'output/error-popup.png' });
     throw e;
   }
-  // await expect(page.getByText('Thất bại', { exact: false })).toBeVisible();
+  await expect(page.getByText('Thất bại', { exact: false })).toBeVisible();
   await expect(page.locator('#auth-screen')).toBeVisible();
   await dismissAlert(page);
 });
@@ -153,12 +160,17 @@ test('duplicate register shows an error and leaves register mode visible', async
   // 3. Bấm nút Submit (Dùng force để bỏ qua mọi vật cản)
   const submitBtn = page.locator('#form-register button[type="submit"]');
   await expect(submitBtn).toBeVisible(); // Kiểm tra nút có hiện hồn không đã
+  const registerResponsePromise = page.waitForResponse((response) =>
+    response.url().endsWith('/register') && response.request().method() === 'POST',
+  );
   await submitBtn.click({ force: true });
 
-  // const alert = page.locator('.swal2-popup');
-  await expect(alert).toBeVisible({ timeout: 15000 });
-
-  await page.locator('.swal2-confirm').click();
+  const registerResponse = await registerResponsePromise;
+  expect(registerResponse.status()).toBe(400);
+  await expectAlert(page);
+  await dismissAlert(page);
+  await expect(page.locator('#form-register')).toBeVisible();
+  await expect(page.locator('#form-login')).toBeHidden();
 });
 test('invalid file upload shows an error and does not render prediction results', async ({ page }) => {
   await gotoProtectedApp(page);
@@ -166,7 +178,7 @@ test('invalid file upload shows an error and does not render prediction results'
   await clickAndWait(page, 'button[onclick="showAppSection(\'predict\')"]');
   await page.locator('#image-upload').setInputFiles(INVALID_UPLOAD_PATH);
   await waitForNetworkIdle(page);
-  await page.locator('#predict-btn button[type="submit"]').click()
+  await page.locator('#predict-btn').click();
 
   await expectAlert(page);
   await expect(page.locator('#result-card')).toBeHidden();

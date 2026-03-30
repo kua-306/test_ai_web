@@ -373,7 +373,7 @@
                     switchAuthMode('login');
                 }
                 else { const d = await res.json(); Swal.fire('Lỗi', d.detail, 'error'); }
-            } catch (e) { }
+            } catch (e) { Swal.fire('Lá»—i máº¡ng', '', 'error'); }
         }
 
         function showAppSection(section) {

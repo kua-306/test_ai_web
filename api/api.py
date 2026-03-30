@@ -34,19 +34,7 @@ MODEL_DIR = 'modelv2'
 CLASS_NAMES = ['Mèo (Cat)', 'Gà (Chicken)', 'Bò (Cow)', 'Chó (Dog)', 'Ngựa (Horse)']
 IMG_SIZE = 224
 
-app = FastAPI()
-#cho phep goi api
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-app.add_middleware(GZipMiddleware, minimum_size=1000)
 limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
 def validate_image(file: UploadFile):
     if file.content_type not in allowed_types:
@@ -61,11 +49,10 @@ def validate_image(file: UploadFile):
         )
 
 # 1. Định nghĩa hàm khởi tạo DB bất đồng bộ
-async def init_db():
-    async with engine.begin() as conn:
+def init_db():
+    models.Base.metadata.create_all(bind=engine)
         # Lệnh này giúp chạy hàm create_all (vốn là đồng bộ) 
         # trong môi trường bất đồng bộ của aiosqlite
-        await conn.run_sync(models.Base.metadata.create_all)
 
 # 2. Gọi hàm này khi FastAPI khởi động
 from contextlib import asynccontextmanager
@@ -73,10 +60,21 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Khởi tạo bảng khi server bắt đầu chạy
-    await init_db()
+    init_db()
     yield
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 serving_fn = None
 if os.path.exists(MODEL_DIR):
     try:
